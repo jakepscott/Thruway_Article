@@ -1,3 +1,7 @@
+
+# loading Libs ------------------------------------------------------------
+
+
 library(tidyverse)
 library(lubridate)
 library(readr)
@@ -7,19 +11,29 @@ library(gganimate)
 library(magick)
 library(maps)
 library(zoo)
+library(patchwork)
 windowsFonts(`Roboto Condensed` = windowsFont("Roboto Condensed"))
 
-##Loading Data
+
+# Loading Data ------------------------------------------------------------
+
+
 NYS_Thruway_Data <- readRDS("data/NYS_Thruway_Data_Clean.rds")
 locations <- read_rds("data/locations.rds")
 NY <- map_data("state") %>% as_tibble() %>% filter(region=="new york")
+NYS_Thruway_Data_lockdown <- NYS_Thruway_Data %>% 
+  filter(month %in% c("January", "February", "March", "April", "May")) %>%
+  mutate(lockdownperiod=case_when(year==2020 & Date>= "2020-03-21" ~ "Post-Lockdown Period",
+                                  year==2019 & Date>= "2019-03-21" ~ "Post-Lockdown Period",
+                                  TRUE~"Pre-Lockdown Period"))
 
-##############################################################
-####Overall traffic compared to 2019####
-##############################################################
+
+
+# Overall traffic compared to 2019 ----------------------------------------
+
 traffic2019vs2020 <- 
   NYS_Thruway_Data %>%
-  filter((Date<="2020-06-01" & Date>="2020-01-01" | Date<="2019-06-01" & Date>="2019-01-01")) %>% 
+  filter((Date<="2020-07-02" & Date>="2020-01-01" | Date<="2020-07-02" & Date>="2019-01-01")) %>% 
   group_by(Date) %>% 
   summarise(Total=sum(Vehicle.Count)) %>%
   ungroup() %>% 
@@ -40,7 +54,7 @@ traffic2019vs2020 <-
          total.y.mean=rollmean(Total.y,k = 7,fill = NA, align = "right"),
          index=(total.y.mean/total.x.mean)*100)
 
-ggplot(traffic2019vs2020) +
+(traffic_graph <- ggplot(traffic2019vs2020) +
   geom_hline(yintercept = 100, lwd=.3, linetype="dashed", color="grey70") +
   geom_point(aes(x=Date.y, y=index),size=1.24,alpha=0) +
   geom_line(aes(x=Date.y, y=index),lwd=1.25, color="#C29000") +
@@ -49,7 +63,7 @@ ggplot(traffic2019vs2020) +
   geom_vline(xintercept = as.numeric(traffic2019vs2020$Date.y[77]), 
              color="grey50", lwd=1, linetype="dashed") +
   scale_color_manual(values = c("#C29000","#0A8CC2")) +
-  labs(title = "2020 Traffic Followed 2019 Patterns; Until Lockdown",
+  labs(title = "Traffic had been rising since late April, but has plateaued /nas cases have risen across the country",
        subtitle = "Vertical lines represent national and statewide lockdowns, respectively",
        x=NULL,
        y= "Percent of 2019 Traffic", 
@@ -65,17 +79,12 @@ ggplot(traffic2019vs2020) +
         legend.text = element_text(size=rel(.9)),
         legend.position = "bottom",
         plot.title.position = "plot", 
-        axis.title.y = element_text(vjust = .85)) 
-#ggsave("figures/Overall2019vs2020.png", dpi=600)
+        axis.title.y = element_text(vjust = .85)))
+#ggsave("June_Update/Overall2019vs2020.png", dpi=600)
 
-##############################################################
-####Vehicles by Weekday####
-##############################################################
-NYS_Thruway_Data_lockdown <- NYS_Thruway_Data %>% 
-  filter(month %in% c("January", "February", "March", "April", "May")) %>%
-  mutate(lockdownperiod=case_when(year==2020 & Date>= "2020-03-21" ~ "Post-Lockdown Period",
-                                  year==2019 & Date>= "2019-03-21" ~ "Post-Lockdown Period",
-                                  TRUE~"Pre-Lockdown Period"))
+
+
+# Vehicles by Weekday ---------------------------------------------
 
 vehicles_by_weekday_2019vs2020 <- 
   NYS_Thruway_Data_lockdown %>% 
@@ -124,11 +133,12 @@ ggplot(vehicles_by_weekday_2019vs2020) +
         legend.position = "none") +
   coord_cartesian(ylim=c(0,15000))
 
-#ggsave("figures/Vehicles_by_Weekday.png", dpi=600)
+#ggsave("July_Update//Vehicles_by_Weekday.png", dpi=600)
 
-##############################################################
-####Heatmap####
-##############################################################
+
+
+# Heatmap ---------------------------------------------------------
+
 sum_cars_year_month_day <- NYS_Thruway_Data %>% 
   group_by(year, month, day) %>% 
   summarize(sum_cars = sum(Vehicle.Count)) 
@@ -143,7 +153,6 @@ ggplot() +
   # Add nice labels
   labs(x = "Day of the month", y = NULL,
        title = "Total Vehicles Entering Thruway Per Day",
-       subtitle = "As stay-at-home orders were issued in March, Thruway traffic fell dramatically",
        fill = "Total\nNumber \nof Vehicles",
        caption = "Plot: @jakepscott2020 | Data: data.ny.gov/Transportation") +
   # Force all the tiles to have equal widths and heights
@@ -171,11 +180,12 @@ ggplot() +
         plot.title.position = "plot",
         legend.key = element_rect(fill = "white", colour = "white"))
 
-#ggsave("figures/HeatMap.png", dpi=600)
+#ggsave("June_Update/HeatMap.png", dpi=600)
 
-##############################################################
-####Location Map####
-##################################################################
+
+# Location Map ------------------------------------------------------------
+
+
 #Getting the number of vehicles by exit for each date
 Entrance_Data_2020 <- NYS_Thruway_Data %>% 
   group_by(Date, Entrance) %>%
@@ -247,7 +257,7 @@ Entrance_Data_2019 <- NYS_Thruway_Data %>%
          month=month(Date),
          day=day(Date),
          weekday=weekdays(as.Date(Date))) %>% 
-  filter(year==2019 & month>=3 & Date<="2019-06-10")
+  filter(year==2019 & month>=3 & Date<="2019-06-29")
 
 
 #Combining the number of vehicles and the lat and long
@@ -297,15 +307,15 @@ a_mgif <- image_read(gif_2019)
 b_mgif <- image_read(gif_2020)
 
 #Making a new gif with the two next to each other, again using magik
-new_gif <- image_append(c(a_mgif[1], b_mgif[1]))
-for(i in 1:138){
-  combined <- image_append(c(a_mgif[i], b_mgif[i]))
-  new_gif <- c(new_gif, combined)
-}
-
-#Saving. For some reason I Cannot get it to save in the Figures Folder
-#image_write(new_gif, "NYS_Locations.gif", quality = 100)
-image_write(new_gif, "NYS_Locations_612.gif", quality = 100)
+  new_gif <- image_append(c(a_mgif[1], b_mgif[1]))
+  for(i in 1:length(unique(Entrance_Data_2019$Date))){
+    combined <- image_append(c(a_mgif[i], b_mgif[i]))
+    new_gif <- c(new_gif, combined)
+  }
+  
+  #Saving. For some reason I Cannot get it to save in the Figures Folder
+  #image_write(new_gif, "NYS_Locations.gif", quality = 100)
+  image_write(new_gif, "NYS_Locations_630.gif", quality = 100)
 
 ##############################################################
 ####Overall Commercial Versus non Commercial####
@@ -313,7 +323,7 @@ image_write(new_gif, "NYS_Locations_612.gif", quality = 100)
 ##Comparing to week last year
 com_verus_noncom_total_index <- 
   NYS_Thruway_Data %>%
-  filter((Date<="2020-06-10" & Date>="2020-01-01" | Date<="2019-06-10" & Date>="2019-01-01")) %>% 
+  filter((Date<="2020-07-02" & Date>="2020-01-01" | Date<="2020-07-02" & Date>="2019-01-01")) %>% 
   group_by(year, week, commercial_vehicle) %>% 
   summarise(Total=sum(Vehicle.Count)) %>%
   ungroup() 
@@ -326,13 +336,12 @@ com_verus_noncom_total_index <-
 
 com_verus_noncom_total_index <- 
   com_verus_noncom_total_index %>% 
-  mutate(index=(Total.y/Total.x)*100)
+  mutate(index=(Total.y/Total.x)*100) %>% 
+  filter(week<=26)
 
 
-indexplot <- ggplot(com_verus_noncom_total_index) +
+ggplot(com_verus_noncom_total_index) +
   geom_hline(yintercept = 100, lwd=.3, linetype="dashed", color="grey70") +
-  geom_point(aes(x=week, y=index,color=commercial_vehicle),
-             size=1.24) +
   geom_line(aes(x=week, y=index,
                 color=commercial_vehicle,
                 group=commercial_vehicle),
@@ -341,7 +350,7 @@ indexplot <- ggplot(com_verus_noncom_total_index) +
   geom_vline(xintercept = 12,color="grey50", lwd=1, linetype="dashed") +
   geom_hline(yintercept = 100, lwd=.3, linetype="dashed", color="grey70") +
   scale_color_manual(values = c("#C29000","#0A8CC2")) +
-  labs(title = "Compared to 2019, Traffic was Similar for Commercial and Non-Commercial Vehicles in 2020;\n Until The Lockdown",
+  labs(title = "After a steady recovery between April and mid June, both\ncommercial and non-commerical traffic are plateauing",
        subtitle = "Vertical lines represent national and statewide lockdowns, respectively",
        x="Week",
        y= "Percent of 2019 Traffic", 
@@ -357,22 +366,18 @@ indexplot <- ggplot(com_verus_noncom_total_index) +
         legend.text = element_text(size=rel(.9)),
         legend.position = "bottom",
         plot.title.position = "plot", 
-        axis.title.y = element_text(vjust = .85)) +
-  transition_reveal(week)
+        axis.title.y = element_text(vjust = .85)) 
 
-index_plot_gif <- animate(indexplot, renderer = gifski_renderer(), 
-                          end_pause = 10,
-                          width = 700, 
-                          height = 500)
-#anim_save("figures/Commercial_vs_non_commercial.gif")
+#ggsave("June_Update/Com_V_NonCom.png", dpi=600)
 
 
-##############################################################
-##Commercial Versus non Commercial by Exit
-##############################################################
+
+# Commercial Versus non Commercial by Exit --------------------------------
+
+
 com_verus_noncom_total_index_by_exit <- 
   NYS_Thruway_Data %>%
-  filter((Date<="2020-05-19" & Date>="2020-01-01" | Date<="2019-05-19" & Date>="2019-01-01")) %>% 
+  filter((Date<="2020-07-02" & Date>="2020-01-01" | Date<="2019-07-02" & Date>="2019-01-01")) %>% 
   group_by(Exit, year, week, commercial_vehicle) %>% 
   summarise(Total=sum(Vehicle.Count)) %>%
   ungroup() 
@@ -385,7 +390,9 @@ com_verus_noncom_total_index_by_exit <-
 
 com_verus_noncom_total_index_by_exit <- 
   com_verus_noncom_total_index_by_exit %>% 
-  mutate(index=(Total.y/Total.x)*100)
+  mutate(index=(Total.y/Total.x)*100) %>% 
+  filter(week<=26)
+
 
 
 ggplot(com_verus_noncom_total_index_by_exit) +
@@ -418,4 +425,4 @@ ggplot(com_verus_noncom_total_index_by_exit) +
         axis.title.x = element_blank()) +
   guides(color=guide_legend(title.position = "left"))
 
-#ggsave("figures/Commercial_vs_nonCommercial_by_Exit.png", dpi=600)
+#ggsave("June_Update/Commercial_vs_nonCommercial_by_Exit.png", dpi=600)

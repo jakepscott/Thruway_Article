@@ -6,7 +6,7 @@ Thruway_2019 <- read_csv("data/NYS_Thruway_Data_2019.csv",
                          col_types = "cccccdc")
 saveRDS(Thruway_2019, "data/NYS_Thruway_Data_2019.rds")
 
-Thruway_2020 <- read_csv("data/NYS_Thruway_Data_2020_6_12.csv",
+Thruway_2020 <- read_csv("data/NYS_Thruway_Data_2020.csv",
                          col_types = "cccccdc")
 saveRDS(Thruway_2020, "data/NYS_Thruway_Data_2020.rds")
 
