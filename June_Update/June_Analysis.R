@@ -63,7 +63,7 @@ traffic2019vs2020 <-
   geom_vline(xintercept = as.numeric(traffic2019vs2020$Date.y[77]), 
              color="grey50", lwd=1, linetype="dashed") +
   scale_color_manual(values = c("#C29000","#0A8CC2")) +
-  labs(title = "Traffic had been rising since late April, but has plateaued /nas cases have risen across the country",
+  labs(title = "Traffic had been rising since late April, but has plateaued \nas cases have risen across the country",
        subtitle = "Vertical lines represent national and statewide lockdowns, respectively",
        x=NULL,
        y= "Percent of 2019 Traffic", 
@@ -80,7 +80,7 @@ traffic2019vs2020 <-
         legend.position = "bottom",
         plot.title.position = "plot", 
         axis.title.y = element_text(vjust = .85)))
-#ggsave("June_Update/Overall2019vs2020.png", dpi=600)
+ggsave("June_Update/Overall2019vs2020.png", dpi=600)
 
 
 
@@ -317,9 +317,11 @@ b_mgif <- image_read(gif_2020)
   #image_write(new_gif, "NYS_Locations.gif", quality = 100)
   image_write(new_gif, "NYS_Locations_630.gif", quality = 100)
 
-##############################################################
-####Overall Commercial Versus non Commercial####
-##############################################################
+
+
+# Overall Commercial Versus non Commercial ------------------------
+
+  
 ##Comparing to week last year
 com_verus_noncom_total_index <- 
   NYS_Thruway_Data %>%
@@ -405,7 +407,7 @@ ggplot(com_verus_noncom_total_index_by_exit) +
   facet_wrap(~Exit)+
   scale_color_manual(values = c("#C29000","#0A8CC2")) +
   scale_y_continuous(breaks = NULL) +
-  labs(title = "At Every Entry Point, Commercial Traffic Dropped by Less than\nnon-Commercial Traffic",
+  labs(title = "Across the state, traffic of all types is starting to level off",
        x="Week",
        y= "Percent of 2019 Traffic", 
        color="Vehicle Type",
