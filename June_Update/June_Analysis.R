@@ -456,13 +456,13 @@ holidays <- tibble(holiday=c("New Years Day","St. Patrick's Day","Memorial Day",
 holidays$holiday <- factor(holidays$holiday,
           labels=c("New Years Day","St. Patrick's Day","Memorial Day","4th of July"),
           levels=c("New Years Day","St. Patrick's Day","Memorial Day","4th of July"))
-
+set.seed(1)
 ggplot(holidays,aes(x=(holiday),y=percent, group=1)) + 
   geom_point(color="#0A8CC2",size=5) +
   coord_cartesian(ylim=c(50,100)) +
   geom_text_repel(aes(label=holiday),direction = "y",box.padding = .75,point.padding = 1,segment.color = "grey70") +
   geom_line(color="#0A8CC2",lwd=2) +
-  labs(title = "Memorial Day was the nadir of holiday traffic, but even\ntraffic on the 4th was well below last year's levels",
+  labs(title = "Holiday traffic on the 4th was still below last year's levels,\nbut was a sharp improvement from Memorial Day",
        x=NULL,
        y= "Percent of 2019 Traffic", 
        caption = "Plot: @jakepscott2020 | Data: data.ny.gov/Transportation") +
@@ -478,4 +478,4 @@ ggplot(holidays,aes(x=(holiday),y=percent, group=1)) +
         plot.title.position = "plot", 
         axis.title.y = element_text(vjust = .85),
         axis.text.x=element_blank()) 
-ggsave("June_Update/Holidays.png", dpi=600)
+#ggsave("June_Update/Holidays2.png", dpi=600)
